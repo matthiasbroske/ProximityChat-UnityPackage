@@ -1,0 +1,17 @@
+{
+    "name": "ProximityChat.Runtime",
+    "rootNamespace": "ProximityChat",
+    "references": [
+        "GUID:0c752da273b17c547ae705acf0f2adf2",
+        "GUID:1491147abca9d7d4bb7105af628b223e"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

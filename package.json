@@ -1,0 +1,11 @@
+{
+    "name": "com.matthias.proximitychat",
+    "displayName": "Proximity Chat",
+    "description": "Proximity chat through FMOD and the Opus codec.",
+    "version": "0.1.0",
+    "unity": "2022.3",
+    "author": { "name": "Matthias Broske", "email": "tias@broske.com" },
+    "hideInEditor": "false",
+    "license": "MIT",
+    "licensesUrl": "https://github.com/matthiasbroske/ProximityChat-UnityPackage/blob/main/LICENSE"
+}
