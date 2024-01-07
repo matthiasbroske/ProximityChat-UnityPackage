@@ -21,7 +21,6 @@ namespace ProximityChat
         private FMODVoiceEmitter _voiceEmitter;
 
         // Encoding/decoding
-        private VoiceDataQueue<short> _voiceSamplesQueue;
         private OpusEncoder _opusEncoder;
         private OpusDecoder _opusDecoder;
         private byte[] _encodeBuffer;
@@ -30,6 +29,9 @@ namespace ProximityChat
         private readonly int[] FRAME_SIZES = { 2880, 1920, 960, 480, 240, 120 };
         private int MaxFrameSize => FRAME_SIZES[0];
         private int MinFrameSize => FRAME_SIZES[FRAME_SIZES.Length-1];
+
+        private const int SAMPLE_RATE = 48000;
+        private const int CHANNEL_COUNT = 1;
 
         void Start()
         {
@@ -43,16 +45,10 @@ namespace ProximityChat
                 _voiceEmitter.enabled = _debugVoice;
                 // Initialize voice recorder
                 _voiceRecorder.Init(0, VoiceFormat.PCM16Samples);
-                _voiceSamplesQueue = new VoiceDataQueue<short>(48000);
                 // Initialize Opus encoder
-                _opusEncoder = new OpusEncoder(48000, 1, OpusApplication.OPUS_APPLICATION_VOIP);
+                _opusEncoder = new OpusEncoder(SAMPLE_RATE, CHANNEL_COUNT, OpusApplication.OPUS_APPLICATION_VOIP);
                 _encodeBuffer = new byte[MaxFrameSize * sizeof(short)];
                 _emptyShorts = new short[MinFrameSize];
-                // Add audio to queue whenever it's recorded
-                _voiceRecorder.PingVoiceRecorded += delegate()
-                {
-                    _voiceSamplesQueue.Enqueue(_voiceRecorder.GetVoiceSamples());
-                };
             }
             // Non-owners should receive encoded voice,
             // decode it and play it as audio
@@ -61,9 +57,9 @@ namespace ProximityChat
                 // Disable voice recorder
                 _voiceRecorder.enabled = _debugVoice;
                 // Initialize voice emitter
-                _voiceEmitter.Init(48000, 1, VoiceFormat.PCM16Samples);
+                _voiceEmitter.Init(SAMPLE_RATE, CHANNEL_COUNT, VoiceFormat.PCM16Samples);
                 // Initialize Opus decoding
-                _opusDecoder = new OpusDecoder(48000, 1);
+                _opusDecoder = new OpusDecoder(SAMPLE_RATE, CHANNEL_COUNT);
                 _decodeBuffer = new short[MaxFrameSize];
             }
         }
@@ -142,6 +138,17 @@ namespace ProximityChat
             return new Span<short> (_decodeBuffer, 0, decodedSize);
         }
 
+        private void Update()
+        {
+            if (IsOwner)
+            {
+                if (Input.GetKey(KeyCode.Space))
+                    StartRecording();
+                else
+                    StopRecording();
+            }
+        }
+
         void LateUpdate()
         {
             if (IsOwner)
@@ -149,14 +156,14 @@ namespace ProximityChat
                 // If we're no longer recording and there's still voice data in the queue,
                 // but not enough to trigger an encode, we want append enough silence
                 // to ensure it will get encoded
-                if (!_voiceRecorder.IsRecording && _voiceSamplesQueue.Length > 0 && _voiceSamplesQueue.Length < MinFrameSize)
+                if (!_voiceRecorder.IsRecording && _voiceRecorder.RecordedSamplesQueue.Length > 0 && _voiceRecorder.RecordedSamplesQueue.Length < MinFrameSize)
                 {
-                    _voiceSamplesQueue.Enqueue(new Span<short>(_emptyShorts).Slice(0, MinFrameSize-_voiceSamplesQueue.Length));
+                    _voiceRecorder.RecordedSamplesQueue.Enqueue(new Span<short>(_emptyShorts).Slice(0, MinFrameSize-_voiceRecorder.RecordedSamplesQueue.Length));
                 }
                 // Encode what's currently in the queue
-                if (_voiceSamplesQueue.Length > 0)
+                if (_voiceRecorder.RecordedSamplesQueue.Length > 0)
                 {
-                    Span<byte> encodedData = EncodeVoiceSamples(_voiceSamplesQueue);
+                    Span<byte> encodedData = EncodeVoiceSamples(_voiceRecorder.RecordedSamplesQueue);
                     // Send encoded voice to everyone
                     if (encodedData != null)
                     {

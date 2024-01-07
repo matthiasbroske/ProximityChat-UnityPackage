@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using Concentus.Common;
 using FMOD;
 using FMODUnity;
 using UnityEngine;
@@ -7,7 +8,9 @@ using UnityEngine;
 namespace ProximityChat
 {
     /// <summary>
-    /// Records microphone audio as single channel 16-bit PCM.
+    /// Records microphone audio as single channel 16-bit PCM, with support
+    /// for resampling recorded audio to a different sample rate than the
+    /// audio driver's native sample rate.
     /// </summary>
     public class FMODVoiceRecorder : MonoBehaviour
     {
@@ -16,33 +19,32 @@ namespace ProximityChat
         private int _driverIndex;
         private bool _isRecording;
         private uint _prevRecordPosition;
-        private byte[] _recordedBytesBuffer;
-        private int _recordedBytesCount;
-        private short[] _recordedSamplesBuffer;
-        private int _recordedSamplesCount;
+        private VoiceDataQueue<byte> _recordedBytesQueue;
+        private VoiceDataQueue<short> _recordedSamplesQueue;
+        // Resampling parameters
+        private bool _resampleIsRequired;
+        private SpeexResampler _resampler;
+        private int _outputSampleRate;
+        private short[] _resampleBuffer;
+        private const int RESAMPLING_QUALITY = 10;
         // Sound parameters
         private Sound _voiceSound;
         private CREATESOUNDEXINFO _soundParams;
-        private int _sampleRate;
-        private const int CHANNEL_COUNT = 1;
-        private const uint SAMPLE_SIZE = sizeof(short) * CHANNEL_COUNT;
+        private int _nativeSampleRate;
+        private uint _soundByteLength;
+        private uint _soundSampleLength;
+        private const uint SAMPLE_SIZE = sizeof(short);
         // Initialized
-        private bool _initialized = false;
+        private bool _initialized;
 
         /// <summary>
-        /// Is the recording currently recording audio.
+        /// Is the recorder currently recording audio.
         /// </summary>
         public bool IsRecording => _isRecording;
-
         /// <summary>
-        /// Invoked every time a new chunk of voice audio data has been recorded
-        /// and is ready to be read.
+        /// Queue of recorded voice audio samples.
         /// </summary>
-        /// <remarks>
-        /// Subscribe to this event to get notified as to when to call
-        /// <see cref="GetVoiceBytes"/> or <see cref="GetVoiceSamples"/>.
-        /// </remarks>
-        public event Action PingVoiceRecorded;
+        public VoiceDataQueue<short> RecordedSamplesQueue => _recordedSamplesQueue;
         
         /// <summary>
         /// Initializes recorder with input driver and output format.
@@ -52,49 +54,18 @@ namespace ProximityChat
         /// When set to <see cref="VoiceFormat.PCM16Bytes"/> use <see cref="GetVoiceBytes"/>
         /// to get recorded audio data, and when set to <see cref="VoiceFormat.PCM16Samples"/>
         /// use <see cref="GetVoiceSamples"/> instead</param>
-        public void Init(int driverIndex = 0, VoiceFormat outputFormat = VoiceFormat.PCM16Bytes)
+        /// <param name="outputSampleRate">The desired sample rate of the output audio.
+        /// Forces resampling if the audio driver does not natively record at this sample rate. </param>
+        public void Init(int driverIndex = 0, VoiceFormat outputFormat = VoiceFormat.PCM16Samples, int outputSampleRate = 48000)
         {
             _outputFormat = outputFormat;
+            _outputSampleRate = outputSampleRate;
             
             // Initialize recording with input device
             SetupRecordingWithDriver(driverIndex);
             
             // Flag initialized
             _initialized = true;
-        }
-
-        /// <summary>
-        /// Gets the most recently recorded voice audio bytes.
-        /// Call this on <see cref="PingVoiceRecorded"/> for best results.
-        /// </summary>
-        /// <remarks>
-        /// Recorder must be initialized with <see cref="VoiceFormat.PCM16Bytes"/> output format
-        /// to use this method.
-        /// </remarks>
-        /// <exception cref="Exception">Throws an exception if output format is not <see cref="VoiceFormat.PCM16Bytes"/></exception>
-        public Span<byte> GetVoiceBytes()
-        {
-            if (_outputFormat != VoiceFormat.PCM16Bytes)
-                throw new Exception("Incorrect output format. Failed to get voice bytes.");
-            
-            return new Span<byte>(_recordedBytesBuffer, 0, _recordedBytesCount);
-        }
-
-        /// <summary>
-        /// Gets the most recently recorded voice audio samples.
-        /// Call this on <see cref="PingVoiceRecorded"/> for best results.
-        /// </summary>
-        /// <remarks>
-        /// Recorder must be initialized with <see cref="VoiceFormat.PCM16Samples"/> output format
-        /// to use this method.
-        /// </remarks>
-        /// <exception cref="Exception">Throws an exception if output format is not <see cref="VoiceFormat.PCM16Samples"/></exception>
-        public Span<short> GetVoiceSamples()
-        {
-            if (_outputFormat != VoiceFormat.PCM16Samples)
-                throw new Exception("Incorrect output format. Failed to get voice samples.");
-            
-            return new Span<short>(_recordedSamplesBuffer, 0, _recordedSamplesCount);
         }
 
         /// <summary>
@@ -142,30 +113,47 @@ namespace ProximityChat
             _driverIndex = driverIndex;
             
             // Get driver info
-            RuntimeManager.CoreSystem.getRecordDriverInfo(_driverIndex, out _, 0, out _, out _sampleRate, out _, out _, out _);
-            
+            RuntimeManager.CoreSystem.getRecordDriverInfo(_driverIndex, out _, 0, out _, out _nativeSampleRate, out _, out _, out _);
+
             // Initialize sound parameters
             _soundParams.cbsize = Marshal.SizeOf(typeof(CREATESOUNDEXINFO));
-            _soundParams.numchannels = CHANNEL_COUNT;
-            _soundParams.defaultfrequency = _sampleRate;
+            _soundParams.numchannels = 1;
+            _soundParams.defaultfrequency = _nativeSampleRate;
             _soundParams.format = SOUND_FORMAT.PCM16;
-            _soundParams.length = (uint)_sampleRate * SAMPLE_SIZE;
+            _soundParams.length = (uint)_nativeSampleRate * SAMPLE_SIZE;
+            _soundByteLength = _soundParams.length;
+            _soundSampleLength = _soundByteLength / SAMPLE_SIZE;
             
             // Initialize record buffer based on output format
             if (_outputFormat == VoiceFormat.PCM16Bytes)
-                _recordedBytesBuffer = new byte[_soundParams.length];
+                _recordedBytesQueue = new VoiceDataQueue<byte>(_soundByteLength);
             else
-                _recordedSamplesBuffer = new short[_soundParams.length / sizeof(short)];
+                _recordedSamplesQueue = new VoiceDataQueue<short>(_soundSampleLength);
+            
+            // Create a resampler if input sample rate is different from output sample rate
+            _resampleIsRequired = _nativeSampleRate != _outputSampleRate;
+            if (_resampleIsRequired)
+            {
+                _resampleBuffer = new short[_soundSampleLength];
+                _resampler = new SpeexResampler(1, _nativeSampleRate, _outputSampleRate, RESAMPLING_QUALITY);
+            }
             
             // Create sound in loop mode and open it direct reading/writing
             RuntimeManager.CoreSystem.createSound(_soundParams.userdata, MODE.LOOP_NORMAL | MODE.OPENUSER, ref _soundParams, out _voiceSound);
         }
         
-        private uint GetAmountRecorded(uint recordStartPosition, uint recordEndPosition)
+        private uint GetRecordedSampleCount(uint recordStartPosition, uint recordEndPosition)
         {
             return recordEndPosition >= recordStartPosition
                 ? recordEndPosition - recordStartPosition
-                : _soundParams.length - recordStartPosition + recordEndPosition;
+                : _soundSampleLength - recordStartPosition + recordEndPosition;
+        }
+        
+        private uint GetRecordedByteCount(uint recordStartPosition, uint recordEndPosition)
+        {
+            return recordEndPosition >= recordStartPosition
+                ? recordEndPosition - recordStartPosition
+                : _soundByteLength - recordStartPosition + recordEndPosition;
         }
         
         void Update()
@@ -174,35 +162,75 @@ namespace ProximityChat
 
             if (_isRecording)
             {
-                // Get the current record position in PCM bytes time units
+                // Get the current record position in PCM samples
                 RuntimeManager.CoreSystem.getRecordPosition(_driverIndex, out uint recordPosition);
-                recordPosition *= SAMPLE_SIZE;
                 
                 // Determine the amount recorded since last frame
-                uint amountRecordedSinceLastFrame = GetAmountRecorded(_prevRecordPosition, recordPosition);
+                uint samplesRecordedSinceLastFrame = GetRecordedSampleCount(_prevRecordPosition, recordPosition);
                 // Read that much data from the sound
-                if (amountRecordedSinceLastFrame > 0)
+                if (samplesRecordedSinceLastFrame > 0)
                 {
-                    _voiceSound.@lock(_prevRecordPosition, amountRecordedSinceLastFrame, out IntPtr ptr1, out IntPtr ptr2, out uint len1, out uint len2);
                     if (_outputFormat == VoiceFormat.PCM16Bytes)
                     {
-                        Marshal.Copy(ptr1, _recordedBytesBuffer, 0, (int)len1);
-                        Marshal.Copy(ptr2, _recordedBytesBuffer, (int)len1, (int)len2);
-                        _recordedBytesCount = (int)amountRecordedSinceLastFrame;
-                        PingVoiceRecorded?.Invoke();
+                        _recordedBytesQueue.ResizeIfNeeded((int)(samplesRecordedSinceLastFrame * SAMPLE_SIZE));
+                        ReadRecordedVoiceBytes(_recordedBytesQueue.Data, _recordedBytesQueue.Length, _prevRecordPosition * SAMPLE_SIZE, samplesRecordedSinceLastFrame * SAMPLE_SIZE);
+                        _recordedBytesQueue.ModifyWritePosition((int)(samplesRecordedSinceLastFrame * SAMPLE_SIZE));
                     }
                     else
                     {
-                        Marshal.Copy(ptr1, _recordedSamplesBuffer, 0, (int)(len1 / sizeof(short)));
-                        Marshal.Copy(ptr2, _recordedSamplesBuffer, (int)(len1 / sizeof(short)), (int)(len2 / sizeof(short)));
-                        _recordedSamplesCount = (int)amountRecordedSinceLastFrame / sizeof(short);
-                        PingVoiceRecorded?.Invoke();
+                        // If resampling is necessary, copy the recorded sound to a temporary buffer,
+                        // resampling, and then add it to the queue
+                        if (_resampleIsRequired)
+                        {
+                            // Read recorded audio into resample buffer
+                            ReadRecordedVoiceSamples(_resampleBuffer, 0, recordPosition, samplesRecordedSinceLastFrame);
+                            // Estimate the length of the recorded audio one it has been resampled
+                            // so that we can resize the queue
+                            int resampledLength = Mathf.CeilToInt((_outputSampleRate / (float)_nativeSampleRate) * samplesRecordedSinceLastFrame);
+                            _recordedSamplesQueue.ResizeIfNeeded(resampledLength);
+                            // Resample directly into the samples queue
+                            int sampledLength = (int)samplesRecordedSinceLastFrame;
+                            _resampler.Process(0, _resampleBuffer, 0, ref sampledLength, _recordedSamplesQueue.Data, _recordedSamplesQueue.Length, ref resampledLength);
+                            _recordedSamplesQueue.ModifyWritePosition(resampledLength);
+                        }
+                        // Otherwise read recorded data directly to the queue
+                        else
+                        {
+                            _recordedSamplesQueue.ResizeIfNeeded((int)samplesRecordedSinceLastFrame);
+                            ReadRecordedVoiceSamples(_recordedSamplesQueue.Data, _recordedSamplesQueue.Length, recordPosition, samplesRecordedSinceLastFrame);
+                            _recordedSamplesQueue.ModifyWritePosition((int)samplesRecordedSinceLastFrame);
+                        }
                     }
-                    _voiceSound.unlock(ptr1, ptr2, len1, len2);
                 }
 
                 _prevRecordPosition = recordPosition;
             }
+        }
+        
+        /// <summary>
+        /// Read voice data bytes directly from the voice sound.
+        /// </summary>
+        private void ReadRecordedVoiceBytes(byte[] voiceBytesBuffer, int offset, uint readStartPosition, uint byteCount)
+        {
+            if (byteCount <= 0) return;
+            
+            _voiceSound.@lock(readStartPosition, byteCount, out IntPtr ptr1, out IntPtr ptr2, out uint len1, out uint len2);
+            Marshal.Copy(ptr1, voiceBytesBuffer, offset, (int)len1);
+            Marshal.Copy(ptr2, voiceBytesBuffer, offset + (int)len1, (int)len2);
+            _voiceSound.unlock(ptr1, ptr2, len1, len2);
+        }
+        
+        /// <summary>
+        /// Read voice data samples directly from the voice sound.
+        /// </summary>
+        private void ReadRecordedVoiceSamples(short[] voiceSamplesBuffer, int offset, uint readStartPosition, uint sampleCount)
+        {
+            if (sampleCount <= 0) return;
+            
+            _voiceSound.@lock(readStartPosition * SAMPLE_SIZE, sampleCount * SAMPLE_SIZE, out IntPtr ptr1, out IntPtr ptr2, out uint len1, out uint len2);
+            Marshal.Copy(ptr1, voiceSamplesBuffer, offset, (int)(len1 / SAMPLE_SIZE));
+            Marshal.Copy(ptr2, voiceSamplesBuffer, offset + (int)(len1 / SAMPLE_SIZE), (int)(len2 / SAMPLE_SIZE));
+            _voiceSound.unlock(ptr1, ptr2, len1, len2);
         }
     }
 }

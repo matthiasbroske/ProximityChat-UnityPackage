@@ -40,7 +40,7 @@ namespace ProximityChat
        /// When set to <see cref="VoiceFormat.PCM16Bytes"/> use <see cref="EnqueueBytesForPlayback"/>
        /// to play audio data, and when set to <see cref="VoiceFormat.PCM16Samples"/>
        /// use <see cref="EnqueueSamplesForPlayback"/> instead</param>
-        public void Init(uint sampleRate = 48000, int channelCount = 1, VoiceFormat inputFormat = VoiceFormat.PCM16Bytes)
+        public void Init(uint sampleRate = 48000, int channelCount = 1, VoiceFormat inputFormat = VoiceFormat.PCM16Samples)
         {
             _sampleRate = sampleRate;
             _channelCount = channelCount;
@@ -57,11 +57,11 @@ namespace ProximityChat
             _emptyBytes = new byte[_soundParams.length];
             if (_inputFormat == VoiceFormat.PCM16Bytes)
             {
-                _voiceBytesQueue = new VoiceDataQueue<byte>((int)_soundParams.length);
+                _voiceBytesQueue = new VoiceDataQueue<byte>(_soundParams.length);
             }
             else
             {
-                _voiceSamplesQueue = new VoiceDataQueue<short>((int)_soundParams.length / sizeof(short));
+                _voiceSamplesQueue = new VoiceDataQueue<short>(_soundParams.length / sizeof(short));
             }
             
             // Create 3D sound in loop mode and allow direct writing to sound data
