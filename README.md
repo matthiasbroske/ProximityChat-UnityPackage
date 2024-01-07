@@ -1,11 +1,12 @@
 # ProximityChat
 
 ## About
-A proximity voice chat solution for Unity using FMOD and the Opus audio codec, compatible with Netcode for GameObjects.
+A proximity voice chat solution for Unity, compatible with Netcode for GameObjects.
+- Uses [FMOD](https://www.fmod.com/) for audio recording and playback
+- Uses [Opus](https://opus-codec.org/) for audio encoding and decoding
 
 ## Installation
-This package relies on FMOD in order to record and play audio. 
-For those already familiar with how to setup FMOD in Unity, feel free to skip Step #1.
+For those already familiar with how to setup FMOD in Unity, skip straight to [Step #2](#step-2-install-proximitychat).
 
 ### Step #1: Install FMOD for Unity
 1. Add the FMOD for Unity package to your assets from the [Unity Asset Store](https://assetstore.unity.com/packages/tools/audio/fmod-for-unity-161631)
