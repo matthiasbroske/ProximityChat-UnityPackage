@@ -55,9 +55,9 @@ namespace ProximityChat
         /// </summary>
         /// <param name="driverIndex">Index of recording driver</param>
         /// <param name="outputFormat">Output voice audio format.
-        /// When set to <see cref="VoiceFormat.PCM16Bytes"/> use <see cref="GetVoiceBytes"/>
+        /// When set to <see cref="VoiceFormat.PCM16Bytes"/> use <see cref="RecordedBytesQueue"/>
         /// to get recorded audio data, and when set to <see cref="VoiceFormat.PCM16Samples"/>
-        /// use <see cref="GetVoiceSamples"/> instead</param>
+        /// use <see cref="RecordedSamplesQueue"/> instead</param>
         /// <param name="outputSampleRate">The desired sample rate of the output audio.
         /// Forces resampling if the audio driver does not natively record at this sample rate. </param>
         public void Init(int driverIndex = 0, VoiceFormat outputFormat = VoiceFormat.PCM16Samples, int outputSampleRate = 48000)
@@ -118,7 +118,7 @@ namespace ProximityChat
             
             // Get driver info
             RuntimeManager.CoreSystem.getRecordDriverInfo(_driverIndex, out _, 0, out _, out _nativeSampleRate, out _, out _, out _);
-            _nativeSampleRate = 12000;
+
             // Initialize sound parameters
             _soundParams.cbsize = Marshal.SizeOf(typeof(CREATESOUNDEXINFO));
             _soundParams.numchannels = 1;

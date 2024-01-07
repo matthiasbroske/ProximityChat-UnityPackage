@@ -21,6 +21,7 @@ namespace ProximityChat
         private FMODVoiceEmitter _voiceEmitter;
 
         // Encoding/decoding
+        private VoiceEncoder _voiceEncoder;
         private OpusEncoder _opusEncoder;
         private OpusDecoder _opusDecoder;
         private byte[] _encodeBuffer;
@@ -46,6 +47,7 @@ namespace ProximityChat
                 // Initialize voice recorder
                 _voiceRecorder.Init(0, VoiceFormat.PCM16Samples);
                 // Initialize Opus encoder
+                _voiceEncoder = new VoiceEncoder(_voiceRecorder.RecordedSamplesQueue);
                 _opusEncoder = new OpusEncoder(SAMPLE_RATE, CHANNEL_COUNT, OpusApplication.OPUS_APPLICATION_VOIP);
                 _encodeBuffer = new byte[MaxFrameSize * sizeof(short)];
                 _emptyShorts = new short[MinFrameSize];
@@ -153,23 +155,37 @@ namespace ProximityChat
         {
             if (IsOwner)
             {
+                
+                // _voiceEmitter.EnqueueSamplesForPlayback( new Span<short>(_voiceRecorder.RecordedSamplesQueue.Data, 0, _voiceRecorder.RecordedSamplesQueue.EnqueuePosition));
+                // _voiceRecorder.RecordedSamplesQueue.Dequeue(_voiceRecorder.RecordedSamplesQueue.EnqueuePosition);
+                //
+                if (_voiceEncoder.TryGetEncodedVoice(out Span<byte> encodedVoice, false))
+                {
+                    SendEncodedVoiceServerRpc(encodedVoice.ToArray());
+                }
+                // Span<byte> old = _voiceEncoder.OldWay();
+                // if (old != null)
+                // {
+                //     SendEncodedVoiceServerRpc(old.ToArray());
+                // }
+                
                 // If we're no longer recording and there's still voice data in the queue,
                 // but not enough to trigger an encode, we want append enough silence
                 // to ensure it will get encoded
-                if (!_voiceRecorder.IsRecording && _voiceRecorder.RecordedSamplesQueue.EnqueuePosition > 0 && _voiceRecorder.RecordedSamplesQueue.EnqueuePosition < MinFrameSize)
-                {
-                    _voiceRecorder.RecordedSamplesQueue.Enqueue(new Span<short>(_emptyShorts).Slice(0, MinFrameSize-_voiceRecorder.RecordedSamplesQueue.EnqueuePosition));
-                }
-                // Encode what's currently in the queue
-                if (_voiceRecorder.RecordedSamplesQueue.EnqueuePosition > 0)
-                {
-                    Span<byte> encodedData = EncodeVoiceSamples(_voiceRecorder.RecordedSamplesQueue);
-                    // Send encoded voice to everyone
-                    if (encodedData != null)
-                    {
-                        SendEncodedVoiceServerRpc(encodedData.ToArray()); // TODO: Any way to avoid this allocation?
-                    }
-                }
+                // if (!_voiceRecorder.IsRecording && _voiceRecorder.RecordedSamplesQueue.EnqueuePosition > 0 && _voiceRecorder.RecordedSamplesQueue.EnqueuePosition < MinFrameSize)
+                // {
+                //     _voiceRecorder.RecordedSamplesQueue.Enqueue(new Span<short>(_emptyShorts).Slice(0, MinFrameSize-_voiceRecorder.RecordedSamplesQueue.EnqueuePosition));
+                // }
+                // // Encode what's currently in the queue
+                // if (_voiceRecorder.RecordedSamplesQueue.EnqueuePosition > 0)
+                // {
+                //     Span<byte> encodedData = EncodeVoiceSamples(_voiceRecorder.RecordedSamplesQueue);
+                //     // Send encoded voice to everyone
+                //     if (encodedData != null)
+                //     {
+                //         SendEncodedVoiceServerRpc(encodedData.ToArray()); // TODO: Any way to avoid this allocation?
+                //     }
+                // }
             }
         }
     }
