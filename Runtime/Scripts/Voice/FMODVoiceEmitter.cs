@@ -208,8 +208,8 @@ namespace ProximityChat
             // Write length is the minimum of available writing space and buffered voice data
             uint availableWriteByteCount = GetAvailableWriteByteCount(playbackPosition, _writePosition, soundIsFull);
             uint writeLength = (_inputFormat == VoiceFormat.PCM16Bytes) ?
-                (uint)Mathf.Min(_voiceBytesQueue.Length, availableWriteByteCount) :
-                (uint)Mathf.Min(_voiceSamplesQueue.Length, availableWriteByteCount / sizeof(short));
+                (uint)Mathf.Min(_voiceBytesQueue.EnqueuePosition, availableWriteByteCount) :
+                (uint)Mathf.Min(_voiceSamplesQueue.EnqueuePosition, availableWriteByteCount / sizeof(short));
             if (writeLength > 0)
             {
                 // Write voice data to sound

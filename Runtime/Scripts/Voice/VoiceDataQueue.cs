@@ -10,12 +10,12 @@ namespace ProximityChat
     public class VoiceDataQueue<T>
     {
         private T[] _voiceDataBuffer;
-        private int _writePosition;
+        private int _enqueuePosition;
 
         /// <summary>
-        /// The current length of the queue.
+        /// The current enqueue position (length) of the queue.
         /// </summary>
-        public int Length => _writePosition;
+        public int EnqueuePosition => _enqueuePosition;
         /// <summary>
         /// The underlying data array representing the queue.
         /// </summary>
@@ -27,7 +27,7 @@ namespace ProximityChat
         /// <param name="defaultLength">Starting length of the underlying array</param>
         public VoiceDataQueue(uint defaultLength)
         {
-            _writePosition = 0;
+            _enqueuePosition = 0;
             _voiceDataBuffer = new T[defaultLength];
         }
         
@@ -37,7 +37,7 @@ namespace ProximityChat
         /// <param name="defaultLength">Starting length of the underlying array</param>
         public VoiceDataQueue(int defaultLength)
         {
-            _writePosition = 0;
+            _enqueuePosition = 0;
             _voiceDataBuffer = new T[defaultLength];
         } 
 
@@ -49,8 +49,8 @@ namespace ProximityChat
         {
             ResizeIfNeeded(voiceData.Length);
             // Copy voice data over
-            voiceData.CopyTo( new Span<T> (_voiceDataBuffer).Slice(_writePosition, voiceData.Length));
-            _writePosition += voiceData.Length;
+            voiceData.CopyTo( new Span<T> (_voiceDataBuffer).Slice(_enqueuePosition, voiceData.Length));
+            _enqueuePosition += voiceData.Length;
         }
 
         /// <summary>
@@ -58,14 +58,14 @@ namespace ProximityChat
         /// </summary>
         /// <param name="dequeueCount">Amount of data to dequeue</param>
         /// <exception cref="ArgumentOutOfRangeException">Dequeue count must
-        /// be less than or equal to the current <see cref="Length"/> of the queue</exception>
+        /// be less than or equal to the current <see cref="EnqueuePosition"/> of the queue</exception>
         public void Dequeue(int dequeueCount)
         {
-            if (dequeueCount > _writePosition)
+            if (dequeueCount > _enqueuePosition)
                 throw new ArgumentOutOfRangeException("Attempted to dequeue more data than exists.");
             
             Array.Copy(_voiceDataBuffer, dequeueCount, _voiceDataBuffer, 0, dequeueCount);
-            _writePosition -= dequeueCount;
+            _enqueuePosition -= dequeueCount;
         }
 
         /// <summary>
@@ -75,10 +75,10 @@ namespace ProximityChat
         public void ResizeIfNeeded(int additionalDataCount)
         {
             // No resize needed if we already have space for this additional data
-            if (_voiceDataBuffer.Length - _writePosition >= additionalDataCount) return;
+            if (_voiceDataBuffer.Length - _enqueuePosition >= additionalDataCount) return;
             
             // Otherwise resize to fit current and additional data
-            Array.Resize(ref _voiceDataBuffer, Mathf.Max(_voiceDataBuffer.Length * 2, _writePosition + additionalDataCount));
+            Array.Resize(ref _voiceDataBuffer, Mathf.Max(_voiceDataBuffer.Length * 2, _enqueuePosition + additionalDataCount));
         }
 
         /// <summary>
@@ -89,9 +89,9 @@ namespace ProximityChat
         /// <returns></returns>
         public void ModifyWritePosition(int deltaWritePosition)
         {
-            _writePosition += deltaWritePosition;
+            _enqueuePosition += deltaWritePosition;
 
-            if (_writePosition < 0 || _writePosition >= _voiceDataBuffer.Length)
+            if (_enqueuePosition < 0 || _enqueuePosition >= _voiceDataBuffer.Length)
                 throw new IndexOutOfRangeException("Write position modified to an illegal position.");
         }
     }

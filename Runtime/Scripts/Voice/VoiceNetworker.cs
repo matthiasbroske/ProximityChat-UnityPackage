@@ -109,7 +109,7 @@ namespace ProximityChat
             int frameSize = 0;
             for (int i = 0; i < FRAME_SIZES.Length; i++)
             {
-                if (voiceSamplesQueue.Length >= FRAME_SIZES[i])
+                if (voiceSamplesQueue.EnqueuePosition >= FRAME_SIZES[i])
                 {
                     frameSize = FRAME_SIZES[i];
                     break;
@@ -156,12 +156,12 @@ namespace ProximityChat
                 // If we're no longer recording and there's still voice data in the queue,
                 // but not enough to trigger an encode, we want append enough silence
                 // to ensure it will get encoded
-                if (!_voiceRecorder.IsRecording && _voiceRecorder.RecordedSamplesQueue.Length > 0 && _voiceRecorder.RecordedSamplesQueue.Length < MinFrameSize)
+                if (!_voiceRecorder.IsRecording && _voiceRecorder.RecordedSamplesQueue.EnqueuePosition > 0 && _voiceRecorder.RecordedSamplesQueue.EnqueuePosition < MinFrameSize)
                 {
-                    _voiceRecorder.RecordedSamplesQueue.Enqueue(new Span<short>(_emptyShorts).Slice(0, MinFrameSize-_voiceRecorder.RecordedSamplesQueue.Length));
+                    _voiceRecorder.RecordedSamplesQueue.Enqueue(new Span<short>(_emptyShorts).Slice(0, MinFrameSize-_voiceRecorder.RecordedSamplesQueue.EnqueuePosition));
                 }
                 // Encode what's currently in the queue
-                if (_voiceRecorder.RecordedSamplesQueue.Length > 0)
+                if (_voiceRecorder.RecordedSamplesQueue.EnqueuePosition > 0)
                 {
                     Span<byte> encodedData = EncodeVoiceSamples(_voiceRecorder.RecordedSamplesQueue);
                     // Send encoded voice to everyone

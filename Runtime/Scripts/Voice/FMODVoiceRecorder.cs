@@ -4,13 +4,13 @@ using Concentus.Common;
 using FMOD;
 using FMODUnity;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 namespace ProximityChat
 {
     /// <summary>
     /// Records microphone audio as single channel 16-bit PCM, with support
-    /// for resampling recorded audio to a different sample rate than the
-    /// audio driver's native sample rate.
+    /// for resampling different sample rate.
     /// </summary>
     public class FMODVoiceRecorder : MonoBehaviour
     {
@@ -42,7 +42,11 @@ namespace ProximityChat
         /// </summary>
         public bool IsRecording => _isRecording;
         /// <summary>
-        /// Queue of recorded voice audio samples.
+        /// Queue of recorded voice audio PCM bytes.
+        /// </summary>
+        public VoiceDataQueue<byte> RecordedBytesQueue => _recordedBytesQueue;
+        /// <summary>
+        /// Queue of recorded voice audio PCM samples.
         /// </summary>
         public VoiceDataQueue<short> RecordedSamplesQueue => _recordedSamplesQueue;
         
@@ -114,7 +118,7 @@ namespace ProximityChat
             
             // Get driver info
             RuntimeManager.CoreSystem.getRecordDriverInfo(_driverIndex, out _, 0, out _, out _nativeSampleRate, out _, out _, out _);
-
+            _nativeSampleRate = 12000;
             // Initialize sound parameters
             _soundParams.cbsize = Marshal.SizeOf(typeof(CREATESOUNDEXINFO));
             _soundParams.numchannels = 1;
@@ -173,7 +177,7 @@ namespace ProximityChat
                     if (_outputFormat == VoiceFormat.PCM16Bytes)
                     {
                         _recordedBytesQueue.ResizeIfNeeded((int)(samplesRecordedSinceLastFrame * SAMPLE_SIZE));
-                        ReadRecordedVoiceBytes(_recordedBytesQueue.Data, _recordedBytesQueue.Length, _prevRecordPosition * SAMPLE_SIZE, samplesRecordedSinceLastFrame * SAMPLE_SIZE);
+                        ReadRecordedVoiceBytes(_recordedBytesQueue.Data, _recordedBytesQueue.EnqueuePosition, _prevRecordPosition * SAMPLE_SIZE, samplesRecordedSinceLastFrame * SAMPLE_SIZE);
                         _recordedBytesQueue.ModifyWritePosition((int)(samplesRecordedSinceLastFrame * SAMPLE_SIZE));
                     }
                     else
@@ -183,21 +187,21 @@ namespace ProximityChat
                         if (_resampleIsRequired)
                         {
                             // Read recorded audio into resample buffer
-                            ReadRecordedVoiceSamples(_resampleBuffer, 0, recordPosition, samplesRecordedSinceLastFrame);
+                            ReadRecordedVoiceSamples(_resampleBuffer, 0, _prevRecordPosition, samplesRecordedSinceLastFrame);
                             // Estimate the length of the recorded audio one it has been resampled
                             // so that we can resize the queue
                             int resampledLength = Mathf.CeilToInt((_outputSampleRate / (float)_nativeSampleRate) * samplesRecordedSinceLastFrame);
                             _recordedSamplesQueue.ResizeIfNeeded(resampledLength);
                             // Resample directly into the samples queue
                             int sampledLength = (int)samplesRecordedSinceLastFrame;
-                            _resampler.Process(0, _resampleBuffer, 0, ref sampledLength, _recordedSamplesQueue.Data, _recordedSamplesQueue.Length, ref resampledLength);
+                            _resampler.Process(0, _resampleBuffer, 0, ref sampledLength, _recordedSamplesQueue.Data, _recordedSamplesQueue.EnqueuePosition, ref resampledLength);
                             _recordedSamplesQueue.ModifyWritePosition(resampledLength);
                         }
                         // Otherwise read recorded data directly to the queue
                         else
                         {
                             _recordedSamplesQueue.ResizeIfNeeded((int)samplesRecordedSinceLastFrame);
-                            ReadRecordedVoiceSamples(_recordedSamplesQueue.Data, _recordedSamplesQueue.Length, recordPosition, samplesRecordedSinceLastFrame);
+                            ReadRecordedVoiceSamples(_recordedSamplesQueue.Data, _recordedSamplesQueue.EnqueuePosition, _prevRecordPosition, samplesRecordedSinceLastFrame);
                             _recordedSamplesQueue.ModifyWritePosition((int)samplesRecordedSinceLastFrame);
                         }
                     }

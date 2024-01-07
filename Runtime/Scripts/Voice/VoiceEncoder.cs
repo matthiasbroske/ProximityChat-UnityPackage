@@ -36,7 +36,7 @@ namespace ProximityChat
             int frameSize = 0;
             for (int i = 0; i < FRAME_SIZES.Length; i++)
             {
-                if (voiceSamplesQueue.Length >= FRAME_SIZES[i])
+                if (voiceSamplesQueue.EnqueuePosition >= FRAME_SIZES[i])
                 {
                     frameSize = FRAME_SIZES[i];
                     break;
