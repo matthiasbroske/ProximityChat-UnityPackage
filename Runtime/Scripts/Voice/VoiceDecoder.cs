@@ -11,11 +11,10 @@ namespace ProximityChat
         // Decoding
         private OpusDecoder _opusDecoder;
         private short[] _decodeBuffer;
-        private const int SAMPLE_RATE = 48000;
 
         public VoiceDecoder()
         {
-            _opusDecoder = new OpusDecoder(SAMPLE_RATE, 1);
+            _opusDecoder = new OpusDecoder(VoiceConsts.OpusSampleRate, 1);
             _decodeBuffer = new short[2880];
         }
         

@@ -19,7 +19,6 @@ namespace ProximityChat
         private int _channelCount;
         private Channel _channel;
         private ChannelGroup _channelGroup;
-        private const uint SAMPLE_SIZE = sizeof(short);
         // Playback state
         private VoiceDataQueue<byte> _voiceBytesQueue;
         private VoiceDataQueue<short> _voiceSamplesQueue;
@@ -52,7 +51,7 @@ namespace ProximityChat
             _soundParams.numchannels = _channelCount;
             _soundParams.defaultfrequency = (int)_sampleRate;
             _soundParams.format = SOUND_FORMAT.PCM16;
-            _soundParams.length = _sampleRate * SAMPLE_SIZE * (uint)_channelCount;
+            _soundParams.length = _sampleRate * VoiceConsts.SampleSize * (uint)_channelCount;
             
             // Initialize voice data buffers
             _emptyBytes = new byte[_soundParams.length];
@@ -62,7 +61,7 @@ namespace ProximityChat
             }
             else
             {
-                _voiceSamplesQueue = new VoiceDataQueue<short>(_soundParams.length / SAMPLE_SIZE);
+                _voiceSamplesQueue = new VoiceDataQueue<short>(_soundParams.length / VoiceConsts.SampleSize);
             }
             
             // Create 3D sound in loop mode and allow direct writing to sound data
@@ -128,9 +127,9 @@ namespace ProximityChat
         {
             if (sampleCount <= 0) return;
             
-            _voiceSound.@lock(writePosition, sampleCount * SAMPLE_SIZE, out IntPtr ptr1, out IntPtr ptr2, out uint len1, out uint len2);
-            Marshal.Copy(voiceSamples, 0, ptr1, (int)(len1 / SAMPLE_SIZE));
-            Marshal.Copy(voiceSamples, (int)(len1 / SAMPLE_SIZE), ptr2, (int)(len2 / SAMPLE_SIZE));
+            _voiceSound.@lock(writePosition, sampleCount * VoiceConsts.SampleSize, out IntPtr ptr1, out IntPtr ptr2, out uint len1, out uint len2);
+            Marshal.Copy(voiceSamples, 0, ptr1, (int)(len1 / VoiceConsts.SampleSize));
+            Marshal.Copy(voiceSamples, (int)(len1 / VoiceConsts.SampleSize), ptr2, (int)(len2 / VoiceConsts.SampleSize));
             _voiceSound.unlock(ptr1, ptr2, len1, len2);
         }
 
@@ -210,7 +209,7 @@ namespace ProximityChat
             uint availableWriteByteCount = GetAvailableWriteByteCount(playbackPosition, _writePosition, soundIsFull);
             uint writeLength = (_inputFormat == VoiceFormat.PCM16Bytes) ?
                 (uint)Mathf.Min(_voiceBytesQueue.EnqueuePosition, availableWriteByteCount) :
-                (uint)Mathf.Min(_voiceSamplesQueue.EnqueuePosition, availableWriteByteCount / SAMPLE_SIZE);
+                (uint)Mathf.Min(_voiceSamplesQueue.EnqueuePosition, availableWriteByteCount / VoiceConsts.SampleSize);
             if (writeLength > 0)
             {
                 // Write voice data to sound
@@ -226,7 +225,7 @@ namespace ProximityChat
                 }
 
                 // Update write position
-                uint writeLengthBytes = (_inputFormat == VoiceFormat.PCM16Bytes) ? writeLength : writeLength * SAMPLE_SIZE;
+                uint writeLengthBytes = (_inputFormat == VoiceFormat.PCM16Bytes) ? writeLength : writeLength * VoiceConsts.SampleSize;
                 _writePosition = (uint)Mathf.Repeat(_writePosition + writeLengthBytes, _soundParams.length);
                 soundIsFull = _writePosition == playbackPosition;
             }

@@ -18,8 +18,6 @@ namespace ProximityChat
         private readonly int[] FRAME_SIZES = { 2880, 1920, 960, 480, 240, 120 };  // Frame sizes (in sample counts) supported by Opus   
         private int MaxFrameSize => FRAME_SIZES[0];
         private int MinFrameSize => FRAME_SIZES[FRAME_SIZES.Length-1];
-        private const int SAMPLE_RATE = 48000; // Opus is built for encoding audio data with a sample rate of 48khz
-        private const int SAMPLE_SIZE = sizeof(short);
 
         /// <summary>
         /// Is there more voice data in the queue left that could be encoded.
@@ -41,8 +39,8 @@ namespace ProximityChat
         {
             _voiceSamplesQueue = voiceSamplesQueue;
             // Initialize the encoder
-            _opusEncoder = new OpusEncoder(SAMPLE_RATE, 1, OpusApplication.OPUS_APPLICATION_VOIP);
-            _encodeBuffer = new byte[MaxFrameSize * SAMPLE_SIZE];
+            _opusEncoder = new OpusEncoder(VoiceConsts.OpusSampleRate, 1, OpusApplication.OPUS_APPLICATION_VOIP);
+            _encodeBuffer = new byte[MaxFrameSize * VoiceConsts.SampleSize];
             _emptyShorts = new short[MinFrameSize];
         }
         

@@ -8,7 +8,7 @@ namespace ProximityChat
 {
     /// <summary>
     /// Networks voice audio, recording, encoding and sending it over the network if owner,
-    /// otherwise receiving, decoding and playing it as 3D spatial audio.
+    /// otherwise receiving, decoding and playing it back as 3D spatial audio.
     /// </summary>
     [RequireComponent(typeof(FMODVoiceEmitter), typeof(FMODVoiceRecorder))]
     public class VoiceNetworker : NetworkBehaviour
@@ -24,9 +24,6 @@ namespace ProximityChat
         private VoiceEncoder _voiceEncoder;
         private VoiceDecoder _voiceDecoder;
 
-        private const int SAMPLE_RATE = 48000;
-        private const int CHANNEL_COUNT = 1;
-
         void Start()
         {
             _voiceRecorder = GetComponent<FMODVoiceRecorder>();
@@ -38,7 +35,7 @@ namespace ProximityChat
                 // Disable voice emitter
                 _voiceEmitter.enabled = _debugVoice;
                 // Initialize voice recorder
-                _voiceRecorder.Init(0, VoiceFormat.PCM16Samples);
+                _voiceRecorder.Init();
                 // Initialize voice encoder
                 _voiceEncoder = new VoiceEncoder(_voiceRecorder.RecordedSamplesQueue);
             }
@@ -49,7 +46,7 @@ namespace ProximityChat
                 // Disable voice recorder
                 _voiceRecorder.enabled = _debugVoice;
                 // Initialize voice emitter
-                _voiceEmitter.Init(SAMPLE_RATE, CHANNEL_COUNT, VoiceFormat.PCM16Samples);
+                _voiceEmitter.Init(VoiceConsts.OpusSampleRate);
                 // Initialize voice decoder
                 _voiceDecoder = new VoiceDecoder();
             }

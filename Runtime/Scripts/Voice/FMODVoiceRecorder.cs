@@ -8,8 +8,8 @@ using UnityEngine;
 namespace ProximityChat
 {
     /// <summary>
-    /// Records microphone audio as single channel 16-bit PCM, with support
-    /// for resampling different sample rate.
+    /// Records microphone audio as single channel 16-bit PCM through FMOD,
+    /// with support for resampling to a specified output sample rate.
     /// </summary>
     public class FMODVoiceRecorder : MonoBehaviour
     {
@@ -21,18 +21,17 @@ namespace ProximityChat
         private VoiceDataQueue<byte> _recordedBytesQueue;
         private VoiceDataQueue<short> _recordedSamplesQueue;
         // Resampling parameters
-        private bool _resampleIsRequired;
         private SpeexResampler _resampler;
+        private bool _resampleIsRequired;
         private int _outputSampleRate;
         private short[] _resampleBuffer;
-        private const int RESAMPLING_QUALITY = 10;
+        private int _resampleQuality;
         // Sound parameters
         private Sound _voiceSound;
         private CREATESOUNDEXINFO _soundParams;
         private int _nativeSampleRate;
         private uint _soundByteLength;
         private uint _soundSampleLength;
-        private const uint SAMPLE_SIZE = sizeof(short);
         // Initialized
         private bool _initialized;
 
@@ -59,10 +58,12 @@ namespace ProximityChat
         /// use <see cref="RecordedSamplesQueue"/> instead</param>
         /// <param name="outputSampleRate">The desired sample rate of the output audio.
         /// Forces resampling if the audio driver does not natively record at this sample rate. </param>
-        public void Init(int driverIndex = 0, VoiceFormat outputFormat = VoiceFormat.PCM16Samples, int outputSampleRate = 48000)
+        /// <param name="resampleQuality">Quality of resampling from 0 - 10</param>
+        public void Init(int driverIndex = 0, VoiceFormat outputFormat = VoiceFormat.PCM16Samples, int outputSampleRate = 48000, int resampleQuality = 10)
         {
             _outputFormat = outputFormat;
             _outputSampleRate = outputSampleRate;
+            _resampleQuality = resampleQuality;
             
             // Initialize recording with input device
             SetupRecordingWithDriver(driverIndex);
@@ -123,9 +124,9 @@ namespace ProximityChat
             _soundParams.numchannels = 1;
             _soundParams.defaultfrequency = _nativeSampleRate;
             _soundParams.format = SOUND_FORMAT.PCM16;
-            _soundParams.length = (uint)_nativeSampleRate * SAMPLE_SIZE;
+            _soundParams.length = (uint)_nativeSampleRate * VoiceConsts.SampleSize;
             _soundByteLength = _soundParams.length;
-            _soundSampleLength = _soundByteLength / SAMPLE_SIZE;
+            _soundSampleLength = _soundByteLength / VoiceConsts.SampleSize;
             
             // Initialize record buffer based on output format
             if (_outputFormat == VoiceFormat.PCM16Bytes)
@@ -138,7 +139,7 @@ namespace ProximityChat
             if (_resampleIsRequired)
             {
                 _resampleBuffer = new short[_soundSampleLength];
-                _resampler = new SpeexResampler(1, _nativeSampleRate, _outputSampleRate, RESAMPLING_QUALITY);
+                _resampler = new SpeexResampler(1, _nativeSampleRate, _outputSampleRate, _resampleQuality);
             }
             
             // Create sound in loop mode and open it direct reading/writing
@@ -175,9 +176,9 @@ namespace ProximityChat
                 {
                     if (_outputFormat == VoiceFormat.PCM16Bytes)
                     {
-                        _recordedBytesQueue.ResizeIfNeeded((int)(samplesRecordedSinceLastFrame * SAMPLE_SIZE));
-                        ReadRecordedVoiceBytes(_recordedBytesQueue.Data, _recordedBytesQueue.EnqueuePosition, _prevRecordPosition * SAMPLE_SIZE, samplesRecordedSinceLastFrame * SAMPLE_SIZE);
-                        _recordedBytesQueue.ModifyWritePosition((int)(samplesRecordedSinceLastFrame * SAMPLE_SIZE));
+                        _recordedBytesQueue.ResizeIfNeeded((int)(samplesRecordedSinceLastFrame * VoiceConsts.SampleSize));
+                        ReadRecordedVoiceBytes(_recordedBytesQueue.Data, _recordedBytesQueue.EnqueuePosition, _prevRecordPosition * VoiceConsts.SampleSize, samplesRecordedSinceLastFrame * VoiceConsts.SampleSize);
+                        _recordedBytesQueue.ModifyWritePosition((int)(samplesRecordedSinceLastFrame * VoiceConsts.SampleSize));
                     }
                     else
                     {
@@ -230,9 +231,9 @@ namespace ProximityChat
         {
             if (sampleCount <= 0) return;
             
-            _voiceSound.@lock(readStartPosition * SAMPLE_SIZE, sampleCount * SAMPLE_SIZE, out IntPtr ptr1, out IntPtr ptr2, out uint len1, out uint len2);
-            Marshal.Copy(ptr1, voiceSamplesBuffer, offset, (int)(len1 / SAMPLE_SIZE));
-            Marshal.Copy(ptr2, voiceSamplesBuffer, offset + (int)(len1 / SAMPLE_SIZE), (int)(len2 / SAMPLE_SIZE));
+            _voiceSound.@lock(readStartPosition * VoiceConsts.SampleSize, sampleCount * VoiceConsts.SampleSize, out IntPtr ptr1, out IntPtr ptr2, out uint len1, out uint len2);
+            Marshal.Copy(ptr1, voiceSamplesBuffer, offset, (int)(len1 / VoiceConsts.SampleSize));
+            Marshal.Copy(ptr2, voiceSamplesBuffer, offset + (int)(len1 / VoiceConsts.SampleSize), (int)(len2 / VoiceConsts.SampleSize));
             _voiceSound.unlock(ptr1, ptr2, len1, len2);
         }
     }
