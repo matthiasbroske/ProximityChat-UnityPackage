@@ -8,30 +8,30 @@ namespace ProximityChat
     /// Networks voice audio, recording, encoding and sending it over the network if owner,
     /// otherwise receiving, decoding and playing it back as 3D spatial audio.
     /// </summary>
-    [RequireComponent(typeof(FMODVoiceEmitter), typeof(FMODVoiceRecorder))]
+    [RequireComponent(typeof(VoiceEmitter), typeof(VoiceRecorder))]
     public class VoiceNetworker : NetworkBehaviour
     {
         [Header("Debug")]
-        [SerializeField] private bool _debugVoice;
+        [SerializeField] private bool _playbackOwnVoice;
 
-        // Record/playback
-        private FMODVoiceRecorder _voiceRecorder;
-        private FMODVoiceEmitter _voiceEmitter;
-
-        // Encoding/decoding
+        // Record + encode
+        private VoiceRecorder _voiceRecorder;
         private VoiceEncoder _voiceEncoder;
+
+        // Decode + play
+        private VoiceEmitter _voiceEmitter;
         private VoiceDecoder _voiceDecoder;
 
         void Start()
         {
-            _voiceRecorder = GetComponent<FMODVoiceRecorder>();
-            _voiceEmitter = GetComponent<FMODVoiceEmitter>();
+            _voiceRecorder = GetComponent<VoiceRecorder>();
+            _voiceEmitter = GetComponent<VoiceEmitter>();
 
             // Owner should record voice and encode it
             if (IsOwner)
             {
                 // Disable voice emitter
-                _voiceEmitter.enabled = _debugVoice;
+                _voiceEmitter.enabled = _playbackOwnVoice;
                 // Initialize voice recorder
                 _voiceRecorder.Init();
                 // Initialize voice encoder
@@ -39,10 +39,10 @@ namespace ProximityChat
             }
             // Non-owners should receive encoded voice,
             // decode it and play it as audio
-            if (!IsOwner || _debugVoice)
+            if (!IsOwner || _playbackOwnVoice)
             {
                 // Disable voice recorder
-                _voiceRecorder.enabled = _debugVoice;
+                _voiceRecorder.enabled = _playbackOwnVoice;
                 // Initialize voice emitter
                 _voiceEmitter.Init(VoiceConsts.OpusSampleRate);
                 // Initialize voice decoder
@@ -59,7 +59,7 @@ namespace ProximityChat
         [ClientRpc]
         public void SendEncodedVoiceClientRpc(byte[] encodedVoiceData)
         {
-            if (!IsOwner || _debugVoice)
+            if (!IsOwner || _playbackOwnVoice)
             {
                 Span<short> decodedVoiceSamples = _voiceDecoder.DecodeVoiceSamples(encodedVoiceData);
                 _voiceEmitter.EnqueueSamplesForPlayback(decodedVoiceSamples);
@@ -82,17 +82,6 @@ namespace ProximityChat
         {
             if (!IsOwner) return;
             _voiceRecorder.StopRecording();
-        }
-
-        private void Update()
-        {
-            if (IsOwner)
-            {
-                if (Input.GetKey(KeyCode.Space))
-                    StartRecording();
-                else
-                    StopRecording();
-            }
         }
 
         void LateUpdate()

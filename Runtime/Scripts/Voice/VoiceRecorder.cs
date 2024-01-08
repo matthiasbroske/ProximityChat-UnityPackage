@@ -11,7 +11,7 @@ namespace ProximityChat
     /// Records microphone audio as single channel 16-bit PCM through FMOD,
     /// with support for resampling to a specified output sample rate.
     /// </summary>
-    public class FMODVoiceRecorder : MonoBehaviour
+    public class VoiceRecorder : MonoBehaviour
     {
         // Recording parameters
         private VoiceFormat _outputFormat;

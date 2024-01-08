@@ -34,7 +34,7 @@ namespace ProximityChat
         /// try to encode anything in the queue every frame.
         /// </summary>
         /// <param name="voiceSamplesQueue">Queue of voice samples. Filled externally, likely
-        /// by a <see cref="FMODVoiceRecorder"/></param>
+        /// by a <see cref="VoiceRecorder"/></param>
         public VoiceEncoder(VoiceDataQueue<short> voiceSamplesQueue)
         {
             _voiceSamplesQueue = voiceSamplesQueue;

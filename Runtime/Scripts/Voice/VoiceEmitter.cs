@@ -9,7 +9,7 @@ namespace ProximityChat
     /// <summary>
     /// Plays 16-bit PCM voice audio as a 3D FMOD sound.
     /// </summary>
-    public class FMODVoiceEmitter : MonoBehaviour
+    public class VoiceEmitter : MonoBehaviour
     {
         // Sound parameters
         private VoiceFormat _inputFormat;
