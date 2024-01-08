@@ -4,7 +4,6 @@ using Concentus.Common;
 using FMOD;
 using FMODUnity;
 using UnityEngine;
-using Debug = UnityEngine.Debug;
 
 namespace ProximityChat
 {

@@ -159,10 +159,24 @@ namespace ProximityChat
                 // _voiceEmitter.EnqueueSamplesForPlayback( new Span<short>(_voiceRecorder.RecordedSamplesQueue.Data, 0, _voiceRecorder.RecordedSamplesQueue.EnqueuePosition));
                 // _voiceRecorder.RecordedSamplesQueue.Dequeue(_voiceRecorder.RecordedSamplesQueue.EnqueuePosition);
                 //
-                if (_voiceEncoder.TryGetEncodedVoice(out Span<byte> encodedVoice, false))
+                // if (_voiceEncoder.TryGetEncodedVoice(out Span<byte> encodedVoice, false))
+                // {
+                //     SendEncodedVoiceServerRpc(encodedVoice.ToArray());
+                // }
+
+                while (_voiceEncoder.HasVoiceLeftToEncode)
                 {
-                    SendEncodedVoiceServerRpc(encodedVoice.ToArray());
+                    Span<byte> old = _voiceEncoder.GetEncodedVoice();
+                        SendEncodedVoiceServerRpc(old.ToArray());
                 }
+
+                if (!_voiceRecorder.IsRecording && !_voiceEncoder.QueueIsEmpty)
+                {
+                    Span<byte> old = _voiceEncoder.GetEncodedVoice(true);
+                        SendEncodedVoiceServerRpc(old.ToArray());
+                        Debug.Log("cool");
+                }
+                
                 // Span<byte> old = _voiceEncoder.OldWay();
                 // if (old != null)
                 // {
