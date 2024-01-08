@@ -27,7 +27,8 @@ For those already familiar with how to setup FMOD in Unity, skip straight to [St
 
 ### Netcode for GameObjects
 To use in a Unity project with Netcode for GameObjects, simply attach the [```VoiceNetworker```](Runtime/Scripts/Voice/VoiceNetworker.cs)
-component to your networked Player Prefab, ideally at ear/eye-level.
+component to your networked Player Prefab, ideally at ear/eye-level. Then, use ```VoiceNetworker.StartRecording()``` and
+```VoiceNetworker.StopRecording()``` to start and stop recording when a key is pressed and released, or when your application starts and exits.
 
 ### Other
 In theory this package is compatible with almost any networking solution for Unity, as all it need is to be able to
