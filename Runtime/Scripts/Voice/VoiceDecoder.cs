@@ -26,7 +26,7 @@ namespace ProximityChat
             int frameSize = OpusPacketInfo.GetNumSamples(encodedVoiceData, 0, encodedVoiceData.Length, _opusDecoder.SampleRate);
             // Decode the audio data to voice samples
             int decodedSize = _opusDecoder.Decode(encodedVoiceData, _decodeBuffer, frameSize);
-            return new Span<short> (_decodeBuffer, 0, decodedSize);
+            return _decodeBuffer.AsSpan(0, decodedSize);
         }
     }
 }

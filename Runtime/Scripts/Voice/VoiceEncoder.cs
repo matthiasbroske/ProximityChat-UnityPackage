@@ -58,7 +58,7 @@ namespace ProximityChat
             // but not enough to trigger an encode, append enough silence so it still gets encoded
             if (forceEncodeWithSilence && _voiceSamplesQueue.EnqueuePosition > 0 && _voiceSamplesQueue.EnqueuePosition < MinFrameSize)
             {
-                _voiceSamplesQueue.Enqueue(new Span<short>(_emptyShorts).Slice(0, MinFrameSize-_voiceSamplesQueue.EnqueuePosition));
+                _voiceSamplesQueue.Enqueue(_emptyShorts.AsSpan(0, MinFrameSize-_voiceSamplesQueue.EnqueuePosition));
             }
             
             // Find the largest frame size we can use to encode the queued voice samples
@@ -77,7 +77,7 @@ namespace ProximityChat
             // Encode samples using the determined frame size
             int encodedSize = _opusEncoder.Encode(_voiceSamplesQueue.Data, frameSize, _encodeBuffer, _encodeBuffer.Length);
             _voiceSamplesQueue.Dequeue(frameSize);
-            return new Span<byte>(_encodeBuffer, 0, encodedSize);
+            return _encodeBuffer.AsSpan(0, encodedSize);
         }
     }
 }
