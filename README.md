@@ -20,4 +20,16 @@ For those already familiar with how to setup FMOD in Unity, skip straight to [St
 2. Click the ```+``` button
 3. Select ```Add package from git URL```
 4. Paste ```git@github.com:matthiasbroske/ProximityChat-UnityPackage.git``` to install the latest version
-    - If you want to access a particular release or branch, you can append ```#<tag or branch>``` at the end, e.g. ```git@github.com:matthiasbroske/ProximityChat-UnityPackage.git#main```
+    - If you want to access a particular release or branch, you can append ```#<tag or branch>``` at the end,
+      e.g. ```git@github.com:matthiasbroske/ProximityChat-UnityPackage.git#main```
+
+## How To Use
+
+### Netcode for GameObjects
+To use in a Unity project with Netcode for GameObjects, simply attach the [```VoiceNetworker```](Runtime/Scripts/Voice/VoiceNetworker.cs)
+component to your networked Player Prefab, ideally at ear/eye-level.
+
+### Other
+In theory this package is compatible with almost any networking solution for Unity, as all it need is to be able to
+send and receive bytes of encoded audio data across the network.
+Take a look at [```VoiceNetworker```](Runtime/Scripts/Voice/VoiceNetworker.cs) to get a feel for how this might be achieved with your networking setup.
