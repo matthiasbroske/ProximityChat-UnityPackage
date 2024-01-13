@@ -106,6 +106,15 @@ namespace ProximityChat
             
             _voiceSamplesQueue.Enqueue(voiceSamples);
         }
+
+        /// <summary>
+        /// Sets the emitted voice volume.
+        /// </summary>
+        /// <param name="volume">Volume from 0 to 1</param>
+        public void SetVolume(float volume)
+        {
+            _channel.setVolume(volume);
+        }
         
         /// <summary>
         /// Write voice data bytes directly to the voice sound.

@@ -84,6 +84,16 @@ namespace ProximityChat
             _voiceRecorder.StopRecording();
         }
 
+        /// <summary>
+        /// Sets the output volume of the voice emitter.
+        /// </summary>
+        /// <param name="volume">Volume from 0 to 1</param>
+        public void SetOutputVolume(float volume)
+        {
+            if (IsOwner && !_playbackOwnVoice) return;
+            _voiceEmitter.SetVolume(volume);
+        }
+
         void LateUpdate()
         {
             if (IsOwner)
