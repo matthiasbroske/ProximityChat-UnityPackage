@@ -64,7 +64,9 @@ namespace ProximityChat
             if (dequeueCount > _enqueuePosition)
                 throw new ArgumentOutOfRangeException("Attempted to dequeue more data than exists.");
             
-            Array.Copy(_voiceDataBuffer, dequeueCount, _voiceDataBuffer, 0, dequeueCount);
+            // Skip copy if we're dequeuing everything
+            if (dequeueCount != _enqueuePosition)
+                Array.Copy(_voiceDataBuffer, dequeueCount, _voiceDataBuffer, 0, _enqueuePosition - dequeueCount);
             _enqueuePosition -= dequeueCount;
         }
 
@@ -76,7 +78,6 @@ namespace ProximityChat
         {
             // No resize needed if we already have space for this additional data
             if (_voiceDataBuffer.Length - _enqueuePosition >= additionalDataCount) return;
-            
             // Otherwise resize to fit current and additional data
             Array.Resize(ref _voiceDataBuffer, Mathf.Max(_voiceDataBuffer.Length * 2, _enqueuePosition + additionalDataCount));
         }
@@ -86,7 +87,8 @@ namespace ProximityChat
         /// Useful when manually writing data to the buffer without using enqueue.
         /// </summary>
         /// <param name="deltaWritePosition">Change in write position</param>
-        /// <returns></returns>
+        /// <exception cref="IndexOutOfRangeException">Thrown  if write position modified
+        /// outside bounds of underlying array</exception>
         public void ModifyWritePosition(int deltaWritePosition)
         {
             _enqueuePosition += deltaWritePosition;
