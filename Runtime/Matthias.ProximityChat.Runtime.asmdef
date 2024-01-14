@@ -1,5 +1,5 @@
 {
-    "name": "ProximityChat.Runtime",
+    "name": "Matthias.ProximityChat.Runtime",
     "rootNamespace": "ProximityChat",
     "references": [
         "GUID:0c752da273b17c547ae705acf0f2adf2",
