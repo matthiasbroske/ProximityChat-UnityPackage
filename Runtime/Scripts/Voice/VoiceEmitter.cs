@@ -184,7 +184,7 @@ namespace ProximityChat
             uint playbackPosition = GetPlaybackPositionBytes();
             // Sound is only full if it was full the last frame and playback position hasn't changed
             _soundIsFull = _soundIsFull && playbackPosition == _prevPlaybackPosition; 
-            UnityEngine.Debug.Log("PeP: " + playbackPosition);
+            
             // Check if we have played all the available voice data since last frame
             uint bytesPlayedSinceLastFrame = GetPlaybackByteCount(_prevPlaybackPosition, playbackPosition);
             if (bytesPlayedSinceLastFrame > _availablePlaybackByteCount)
@@ -201,17 +201,11 @@ namespace ProximityChat
             
             // Write length is the minimum of available writing space and buffered voice data
             uint availableWriteByteCount = GetAvailableWriteByteCount(playbackPosition, _writePosition, _soundIsFull);
-            //UnityEngine.Debug.Log("pp: " + bytesPlayedSinceLastFrame);
             uint writeLength = (_inputFormat == VoiceFormat.PCM16Bytes) ?
                 (uint)Mathf.Min(_voiceBytesQueue.EnqueuePosition, availableWriteByteCount) :
                 (uint)Mathf.Min(_voiceSamplesQueue.EnqueuePosition, availableWriteByteCount / VoiceConsts.SampleSize);
-            //int bef = _voiceSamplesQueue.EnqueuePosition;
-            //UnityEngine.Debug.Log(_voiceSamplesQueue.EnqueuePosition + " VS " + availableWriteByteCount / VoiceConsts.SampleSize);
             if (writeLength > 0)
             {
-            //     UnityEngine.Debug.Log("AMOUNT WRITTEN: " + writeLength);
-            //     UnityEngine.Debug.Log("Storage : " + _voiceSamplesQueue.Data.Length);
-            // UnityEngine.Debug.Log("wp : " + _voiceSamplesQueue.EnqueuePosition);
                 // Write voice data to sound
                 if (_inputFormat == VoiceFormat.PCM16Bytes)
                 {
@@ -229,13 +223,10 @@ namespace ProximityChat
                 _writePosition = (uint)Mathf.Repeat(_writePosition + writeLengthBytes, _soundParams.length);
                 _soundIsFull = _writePosition == playbackPosition;
             }
-             UnityEngine.Debug.Log("AVAILABLE TO WRITE: " + availableWriteByteCount/ VoiceConsts.SampleSize);
-            //UnityEngine.Debug.Log("AMOUNT ACT WRITTEN: " + (bef - _voiceSamplesQueue.EnqueuePosition));
-            
+
             // Track the amount of bytes now available for playback
             _availablePlaybackByteCount = GetAvailablePlaybackByteCount(playbackPosition, _writePosition, _soundIsFull);
-            UnityEngine.Debug.Log("AVAILABLE TO PLAY: " + _availablePlaybackByteCount/ VoiceConsts.SampleSize);
-            
+
             // Pause the channel if there are no bytes left to play
             SetPaused(_availablePlaybackByteCount == 0);
             

@@ -5,28 +5,24 @@ using UnityEngine;
 namespace ProximityChat
 {
     /// <summary>
-    /// Networks voice audio, recording, encoding and sending it over the network if owner,
+    /// Networks voice audio -- recording, encoding and sending it over the network if owner,
     /// otherwise receiving, decoding and playing it back as 3D spatial audio.
     /// </summary>
-    [RequireComponent(typeof(VoiceEmitter), typeof(VoiceRecorder))]
     public class VoiceNetworker : NetworkBehaviour
     {
+        [Header("Recorder")]
+        [SerializeField] private VoiceRecorder _voiceRecorder;
+        [Header("Emitter")]
+        [SerializeField] private VoiceEmitter _voiceEmitter;
         [Header("Debug")]
         [SerializeField] private bool _playbackOwnVoice;
 
-        // Record + encode
-        private VoiceRecorder _voiceRecorder;
+        // Encode/decode
         private VoiceEncoder _voiceEncoder;
-
-        // Decode + play
-        private VoiceEmitter _voiceEmitter;
         private VoiceDecoder _voiceDecoder;
 
         void Start()
         {
-            _voiceRecorder = GetComponent<VoiceRecorder>();
-            _voiceEmitter = GetComponent<VoiceEmitter>();
-
             // Owner should record voice and encode it
             if (IsOwner)
             {
@@ -43,10 +39,10 @@ namespace ProximityChat
             {
                 // Disable voice recorder
                 _voiceRecorder.enabled = _playbackOwnVoice;
-                // Initialize voice emitter
-                _voiceEmitter.Init(VoiceConsts.OpusSampleRate);
                 // Initialize voice decoder
                 _voiceDecoder = new VoiceDecoder();
+                // Initialize voice emitter
+                _voiceEmitter.Init(VoiceConsts.OpusSampleRate);
             }
         }
 
