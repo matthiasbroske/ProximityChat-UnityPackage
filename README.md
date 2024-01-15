@@ -49,26 +49,31 @@ If you would like to play voice audio through FMOD Studio, follow the instructio
    
 ![image](https://github.com/matthiasbroske/ProximityChat-UnityPackage/assets/82914350/1016551b-4316-464d-b5a1-adb789a9b0db)
 
-6. Resize the instrument such that it is <ins>EXACTLY ONE SECOND LONG</ins>, starting from 0:00
+6. Resize the instrument such that it is <ins>exactly 1 second long</ins>, starting from 0:00
 
 ![image](https://github.com/matthiasbroske/ProximityChat-UnityPackage/assets/82914350/32f06d2d-4f24-44b4-b6b9-2612f71b9181)
 
-7. Click on the programmer instrument and set it to ```Async``` and ```Loop Instrument``` with an infinite ```Play Count```
+7. Right click in the ```Logic Tracks``` region and select ```New Loop Region```, resizing it to be exactly the same size as
+   the programmer instrument
+
+![image](https://github.com/matthiasbroske/ProximityChat-UnityPackage/assets/82914350/fc8e487e-be0c-49d0-91c8-bebbbf929829)
+
+9. Click on the programmer instrument, enabling ```Async``` and ```Loop Instrument``` with an infinite ```Play Count```
 
 ![image](https://github.com/matthiasbroske/ProximityChat-UnityPackage/assets/82914350/9b337f37-3c74-410f-84c8-c9e855136fc8)
 
-8. This event is where our voice audio will be played, so feel free to add additional audio effects or tweak the spatialization
+9. This event is where our voice audio will be played, so feel free to add additional audio effects or tweak the spatialization
    settings of the master track here as desired
 
 ![image](https://github.com/matthiasbroske/ProximityChat-UnityPackage/assets/82914350/5346672a-586c-4fd5-bf82-3d7a7408d7a1)
 
-9. Save and build the FMOD Studio project before returning to Unity
+10. Save and build the FMOD Studio project before returning to Unity
 
 ![image](https://github.com/matthiasbroske/ProximityChat-UnityPackage/assets/82914350/3ab6eb85-80a2-470a-9296-564350c35051)
 
-10. In Unity, locate the ```Voice Networker (Studio)``` Prefab in the ```Runtime/Prefabs``` folder of the ProximityChat package
-11. Drag and drop that prefab onto your networked Player Prefab, ideally attached to the camera at eye/ear-level
-12. Locate the ```StudioVoiceEmitter``` component of that prefab, and fill in the ```Voice Event Reference``` field by clicking the magnifying glass and
+11. In Unity, locate the ```Voice Networker (Studio)``` Prefab in the ```Runtime/Prefabs``` folder of the ProximityChat package
+12. Drag and drop that prefab onto your networked Player Prefab, ideally attached to the camera at eye/ear-level
+13. Locate the ```StudioVoiceEmitter``` component of that prefab, and fill in the ```Voice Event Reference``` field by clicking the magnifying glass and
     selecting the "Voice Chat" event you created in FMOD Studio
 14. Proximity voice chat should now be up and running in your project!
 
