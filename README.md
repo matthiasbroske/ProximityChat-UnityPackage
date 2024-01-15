@@ -75,12 +75,13 @@ If you would like to play voice audio through FMOD Studio, follow the instructio
 12. Drag and drop that prefab onto your networked Player Prefab, ideally attached to the camera at eye/ear-level
 13. Locate the ```StudioVoiceEmitter``` component of that prefab, and fill in the ```Voice Event Reference``` field by clicking the magnifying glass and
     selecting the "Voice Chat" event you created in FMOD Studio
-14. Proximity voice chat should now be up and running in your project!
+14. See [How to Use](#how-to-use) for instructions on how to start/stop recording voice
 
 ### Option #2: FMOD Engine Setup
 If you would like to play voice audio directly, without using FMOD Studio, follow the instructions below.
 1. Locate the ```Voice Networker (Core)``` Prefab in the ```Runtime/Prefabs``` folder of the ProximityChat package
 2. Drag and drop this prefab onto your networked Player Prefab, ideally attached to the camera at eye/ear-level
+3. See [How to Use](#how-to-use) for instructions on how to start/stop recording voice
 
 ## How to Use
 
