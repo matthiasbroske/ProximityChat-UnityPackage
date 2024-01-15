@@ -36,46 +36,46 @@ If you do not plan to use FMOD Studio for voice playback, skip to [Step #2](#ste
 ### Option #1: FMOD Studio Setup
 If you would like to play voice audio through FMOD Studio, follow the instructions below.
 1. Open the FMOD Studio project you linked to your Unity project
-2. In the ```Events``` tab, right click and select ```Event Defaults > 3D Timeline``` to create a spatialized event through which we will play voice audio
+2. In the ```Events``` tab, right click and select ```Event Defaults > 3D Timeline``` to create a spatialized event through which we will play voice audio,
+   and name it something like "Voice Chat"
 
 ![image](https://github.com/matthiasbroske/ProximityChat-UnityPackage/assets/82914350/fbbc364b-06b2-4366-bacd-f90d739d7ad4)
 
-3. Name it "Voice Chat", or whatever else you wish
-4. Assign this event to a bank of your chosing by right clicking on it and selecting ```Assign to Bank > Browse``` and choosing a bank
+3. Assign this event to a bank of your chosing by right clicking on it and selecting ```Assign to Bank > Browse``` and choosing a bank
 
 ![image](https://github.com/matthiasbroske/ProximityChat-UnityPackage/assets/82914350/433042c1-7ccc-4d89-9005-ae5318ef3787)
 
-5. Right click inside the track named ```Audio 1``` and select ```Add Programmer Instrument```
+4. Right click inside the track named ```Audio 1``` and select ```Add Programmer Instrument```
    
 ![image](https://github.com/matthiasbroske/ProximityChat-UnityPackage/assets/82914350/1016551b-4316-464d-b5a1-adb789a9b0db)
 
-6. Resize the instrument such that it is <ins>exactly 1 second long</ins>, starting from 0:00
+5. Resize the instrument such that it is <ins>exactly 1 second long</ins>, starting from 0:00
 
 ![image](https://github.com/matthiasbroske/ProximityChat-UnityPackage/assets/82914350/32f06d2d-4f24-44b4-b6b9-2612f71b9181)
 
-7. Right click in the ```Logic Tracks``` region and select ```New Loop Region```, resizing it to be exactly the same size as
+6. Right click in the ```Logic Tracks``` region and select ```New Loop Region```, resizing it to be exactly the same size as
    the programmer instrument
 
 ![image](https://github.com/matthiasbroske/ProximityChat-UnityPackage/assets/82914350/fc8e487e-be0c-49d0-91c8-bebbbf929829)
 
-9. Click on the programmer instrument, enabling ```Async``` and ```Loop Instrument``` with an infinite ```Play Count```
+7. Click on the programmer instrument, enabling ```Async``` and ```Loop Instrument``` with an infinite ```Play Count```
 
 ![image](https://github.com/matthiasbroske/ProximityChat-UnityPackage/assets/82914350/9b337f37-3c74-410f-84c8-c9e855136fc8)
 
-9. This event is where our voice audio will be played, so feel free to add additional audio effects or tweak the spatialization
+8. This event is where our voice audio will be played, so feel free to add additional audio effects or tweak the spatialization
    settings of the master track here as desired
 
 ![image](https://github.com/matthiasbroske/ProximityChat-UnityPackage/assets/82914350/5346672a-586c-4fd5-bf82-3d7a7408d7a1)
 
-10. Save and build the FMOD Studio project before returning to Unity
+9. Save and build the FMOD Studio project before returning to Unity
 
 ![image](https://github.com/matthiasbroske/ProximityChat-UnityPackage/assets/82914350/3ab6eb85-80a2-470a-9296-564350c35051)
 
-11. In Unity, locate the ```Voice Networker (Studio)``` Prefab in the ```Runtime/Prefabs``` folder of the ProximityChat package
-12. Drag and drop that prefab onto your networked Player Prefab, ideally attached to the camera at eye/ear-level
-13. Locate the ```StudioVoiceEmitter``` component of that prefab, and fill in the ```Voice Event Reference``` field by clicking the magnifying glass and
+10. In Unity, locate the ```Voice Networker (Studio)``` Prefab in the ```Runtime/Prefabs``` folder of the ProximityChat package
+11. Drag and drop that prefab onto your networked Player Prefab, ideally attached to the camera at eye/ear-level
+12. Locate the ```StudioVoiceEmitter``` component of that prefab, and fill in the ```Voice Event Reference``` field by clicking the magnifying glass and
     selecting the "Voice Chat" event you created in FMOD Studio
-14. See [How to Use](#how-to-use) for instructions on how to start/stop recording voice
+13. See [How to Use](#how-to-use) for instructions on how to start/stop voice recording
 
 ### Option #2: FMOD Engine Setup
 If you would like to play voice audio directly, without using FMOD Studio, follow the instructions below.
