@@ -10,10 +10,9 @@ namespace ProximityChat
     public class CoreVoiceEmitter : VoiceEmitter
     {
         // Sound parameters
-        private Channel _channel;
-        private ChannelGroup _channelGroup;
+        protected ChannelGroup _channelGroup;
         // 3D audio
-        private Vector3 _prevPosition;
+        protected Vector3 _prevPosition;
 
         /// <inheritdoc />
         public override void Init(uint sampleRate = 48000, int channelCount = 1, VoiceFormat inputFormat = VoiceFormat.PCM16Samples)
@@ -29,17 +28,6 @@ namespace ProximityChat
             _channel.setVolume(volume);
         }
 
-        protected override uint GetPlaybackPositionBytes()
-        {
-            _channel.getPosition(out uint playbackPosition, TIMEUNIT.PCMBYTES);
-            return playbackPosition;
-        }
-
-        protected override void SetPlaybackPositionBytes(uint playbackPosition)
-        {
-            _channel.setPosition(playbackPosition, TIMEUNIT.PCMBYTES);
-        }
-
         protected override void SetPaused(bool isPaused)
         {
             _channel.setPaused(isPaused);
@@ -47,6 +35,7 @@ namespace ProximityChat
 
         protected override void Update()
         {
+            if (!_initialized) return;
             base.Update();
             
             // Set the 3D attributes for audio spatialization

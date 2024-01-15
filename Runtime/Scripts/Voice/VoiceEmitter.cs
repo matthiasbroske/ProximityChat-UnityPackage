@@ -17,6 +17,7 @@ namespace ProximityChat
         protected CREATESOUNDEXINFO _soundParams;
         protected uint _sampleRate;
         protected int _channelCount;
+        protected Channel _channel;
         // Playback state
         protected VoiceDataQueue<byte> _voiceBytesQueue;
         protected VoiceDataQueue<short> _voiceSamplesQueue;
@@ -172,8 +173,12 @@ namespace ProximityChat
             }
         }
 
-        protected abstract uint GetPlaybackPositionBytes();
-        protected abstract void SetPlaybackPositionBytes(uint playbackPosition);
+        protected uint GetPlaybackPositionBytes()
+        {
+            _channel.getPosition(out uint playbackPosition, TIMEUNIT.PCMBYTES);
+            return playbackPosition;
+        }
+        
         protected abstract void SetPaused(bool isPaused);
         
         protected virtual void Update()
@@ -189,10 +194,9 @@ namespace ProximityChat
             uint bytesPlayedSinceLastFrame = GetPlaybackByteCount(_prevPlaybackPosition, playbackPosition);
             if (bytesPlayedSinceLastFrame > _availablePlaybackByteCount)
             {
-                playbackPosition = _writePosition;
-                SetPlaybackPositionBytes(playbackPosition);
+                _writePosition = playbackPosition;
             }
-            
+
             // Write silence to the portion of sound that was played back last frame
             if (bytesPlayedSinceLastFrame > 0)
             {
