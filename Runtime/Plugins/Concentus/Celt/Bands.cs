@@ -1042,7 +1042,7 @@ namespace Concentus.Celt
             int stereo;
             Span<int> x = X;
             int x_ptr = X_ptr;
-            int encode;
+            // int encode;
             EntropyCoder ec; // porting note: pointer
 
             ec = ctx.ec;
