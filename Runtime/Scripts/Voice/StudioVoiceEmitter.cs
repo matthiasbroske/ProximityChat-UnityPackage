@@ -73,7 +73,7 @@ namespace ProximityChat
         }
 
         [AOT.MonoPInvokeCallback(typeof(EVENT_CALLBACK))]
-        RESULT VoiceEventCallback(EVENT_CALLBACK_TYPE type, IntPtr instancePtr, IntPtr parameterPtr)
+        static RESULT VoiceEventCallback(EVENT_CALLBACK_TYPE type, IntPtr instancePtr, IntPtr parameterPtr)
         {
             switch (type)
             {
@@ -88,6 +88,15 @@ namespace ProximityChat
                 }
             }
             return RESULT.OK;
+        }
+
+        private void OnDestroy()
+        {
+            if (_initialized)
+            {
+                _voiceSound.release();
+                _voiceEventInstance.release();
+            }
         }
     }
 }

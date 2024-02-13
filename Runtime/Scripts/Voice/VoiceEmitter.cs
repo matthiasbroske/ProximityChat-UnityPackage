@@ -13,7 +13,7 @@ namespace ProximityChat
     {
         // Sound parameters
         protected VoiceFormat _inputFormat;
-        protected Sound _voiceSound;
+        protected static Sound _voiceSound;
         protected CREATESOUNDEXINFO _soundParams;
         protected uint _sampleRate;
         protected int _channelCount;
